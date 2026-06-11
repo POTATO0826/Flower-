@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
-import { qualityScale, viewportSize } from "../utils/device";
+import { isAppleWebKit, qualityScale, viewportSize } from "../utils/device";
 
 export interface BloomOptions {
   strength: number;
@@ -59,7 +59,11 @@ export function createComposer(
   );
   lumMat.needsUpdate = true;
 
-  composer.addPass(bloomPass);
+  // Apple WebKit GPUs keep finding new ways to corrupt the bloom buffers
+  // (the rainbow-dot bug), so there the scene ships without the glow pass
+  // entirely — brightness comes from plain lights instead. The bloomPass
+  // object still exists so the tap-pulse animation code stays harmless.
+  if (!isAppleWebKit()) composer.addPass(bloomPass);
 
   return { composer, bloomPass };
 }

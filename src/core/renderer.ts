@@ -18,7 +18,7 @@ export function createRenderer(container: HTMLElement): THREE.WebGLRenderer {
   // Nicer colour + tone mapping for the soft, photographic look.
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.1;
+  renderer.toneMappingExposure = 1.25;
 
   // Real soft shadows — a big part of why the flowers read as "real".
   renderer.shadowMap.enabled = true;
