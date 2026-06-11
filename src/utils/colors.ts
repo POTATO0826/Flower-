@@ -16,7 +16,7 @@ export const palettes: Record<string, Palette> = {
     bgTop: 0x0b0c1d, // deep night blue...
     bgBottom: 0x2c1a2c, // ...sinking into dark plum
     fog: { color: 0x1f1524, near: 8, far: 24 },
-    stem: 0x4a3a2c, // woody branch brown
+    stem: 0x715741, // woody branch brown, light enough to read at night
     particle: 0xffb9d2, // falling petals
     accent: 0xff8fb5,
   },
