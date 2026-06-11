@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
-import { qualityScale } from "../utils/device";
+import { qualityScale, viewportSize } from "../utils/device";
 
 export interface BloomOptions {
   strength: number;
@@ -25,11 +25,10 @@ export function createComposer(
   bloom: BloomOptions,
   container: HTMLElement,
 ): PostProcessing {
-  const w = container.clientWidth || window.innerWidth;
-  const h = container.clientHeight || window.innerHeight;
+  const { width, height } = viewportSize(container);
 
   const composer = new EffectComposer(renderer);
-  composer.setSize(w, h);
+  composer.setSize(width, height);
   composer.addPass(new RenderPass(scene, camera));
 
   // Bloom is the most expensive effect on phones — run its internal render
@@ -38,7 +37,7 @@ export function createComposer(
   const q = qualityScale();
   const resScale = q < 1 ? 0.5 : 1;
   const bloomPass = new UnrealBloomPass(
-    new THREE.Vector2(Math.round(w * resScale), Math.round(h * resScale)),
+    new THREE.Vector2(Math.round(width * resScale), Math.round(height * resScale)),
     bloom.strength * (0.85 + q * 0.15),
     bloom.radius,
     bloom.threshold,

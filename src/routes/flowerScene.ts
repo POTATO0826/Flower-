@@ -16,6 +16,7 @@ import { createParticles, type ParticlesOptions } from "../objects/createParticl
 import { createHearts } from "../objects/createHearts";
 import type { RealFlower } from "../objects/flowers/types";
 import { setupInteraction } from "../animations/interactionAnimation";
+import { viewportSize } from "../utils/device";
 import {
   growLeaves,
   bloomPetals,
@@ -58,6 +59,24 @@ export interface FlowerSceneConfig {
   headSpin?: number;
   /** Extra scene dressing; may return a per-frame update. */
   dress?: (scene: THREE.Scene) => ((dt: number, elapsed: number) => void) | void;
+}
+
+function responsiveOrbit(
+  container: HTMLElement,
+  orbit: FlowerSceneConfig["orbit"],
+): FlowerSceneConfig["orbit"] & { parallaxHeight: number } {
+  const { width, height } = viewportSize(container);
+  const narrow = width < 768;
+  const compact = Math.min(width, height) < 520;
+  const radiusScale = compact ? 1.16 : narrow ? 1.08 : 1;
+
+  return {
+    radius: orbit.radius * radiusScale,
+    height: orbit.height,
+    speed: orbit.speed,
+    parallax: orbit.parallax * (compact || narrow ? 0.6 : 1),
+    parallaxHeight: compact ? 0.22 : narrow ? 0.32 : 0.5,
+  };
 }
 
 export function createFlowerScene(
@@ -231,12 +250,8 @@ export function createFlowerScene(
     updateOrbitCamera(
       exp.camera,
       {
+        ...responsiveOrbit(container, cfg.orbit),
         target,
-        radius: cfg.orbit.radius,
-        height: cfg.orbit.height,
-        speed: cfg.orbit.speed,
-        parallax: cfg.orbit.parallax,
-        parallaxHeight: 0.5,
       },
       elapsed,
       pointer,

@@ -15,6 +15,21 @@ export function isMobileViewport(): boolean {
   return window.innerWidth < 768;
 }
 
+/** Current viewport size, preferring the visual viewport on mobile browsers. */
+export function viewportSize(container?: HTMLElement): { width: number; height: number } {
+  const visualViewport = window.visualViewport;
+  const width =
+    container?.clientWidth ||
+    Math.round(visualViewport?.width ?? 0) ||
+    window.innerWidth;
+  const height =
+    container?.clientHeight ||
+    Math.round(visualViewport?.height ?? 0) ||
+    window.innerHeight;
+
+  return { width, height };
+}
+
 /**
  * A 0..1 "quality" factor. Phones get fewer particles, lower pixel ratio,
  * and simpler bloom so the experience stays smooth.

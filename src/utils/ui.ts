@@ -1,7 +1,7 @@
 import { createAmbientMusic } from "./audio";
 
 // A minimal overlay: just a small round music button in the corner.
-// No text anywhere — the scene speaks for itself.
+// No text anywhere; the scene speaks for itself.
 
 export interface OverlayOptions {
   /** Theme class for styling (e.g. "theme-sakura"). */
@@ -21,18 +21,32 @@ export function createOverlay(
   root.className = "overlay";
   if (options.themeClass) root.classList.add(options.themeClass);
 
-  // Music button (icon only — never autoplays).
+  // Browsers block audible autoplay, so music starts on the first real tap or
+  // click anywhere in the scene. The button still toggles it manually.
   const music = createAmbientMusic();
   const musicBtn = document.createElement("button");
   musicBtn.className = "ui-button music";
   musicBtn.type = "button";
   musicBtn.setAttribute("aria-label", "Toggle music");
-  musicBtn.textContent = "♪";
-  musicBtn.addEventListener("click", () => {
-    const on = music.toggle();
-    musicBtn.textContent = on ? "♫" : "♪";
+
+  const syncMusicButton = (on: boolean) => {
+    musicBtn.textContent = on ? "\u266b" : "\u266a";
     musicBtn.classList.toggle("active", on);
-  });
+  };
+
+  const toggleMusic = () => {
+    syncMusicButton(music.toggle());
+  };
+
+  const autoStartMusic = (e: PointerEvent) => {
+    if (musicBtn.contains(e.target as Node)) return;
+    if (!music.playing()) syncMusicButton(music.toggle());
+    window.removeEventListener("pointerdown", autoStartMusic);
+  };
+
+  syncMusicButton(false);
+  musicBtn.addEventListener("click", toggleMusic);
+  window.addEventListener("pointerdown", autoStartMusic, { passive: true });
 
   root.append(musicBtn);
   container.appendChild(root);
@@ -40,6 +54,8 @@ export function createOverlay(
   return {
     root,
     dispose() {
+      window.removeEventListener("pointerdown", autoStartMusic);
+      musicBtn.removeEventListener("click", toggleMusic);
       music.dispose();
       root.remove();
     },

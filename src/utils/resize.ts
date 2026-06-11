@@ -1,6 +1,7 @@
 import type * as THREE from "three";
 import type { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
-import { cappedPixelRatio } from "./device";
+import { updateCameraForViewport } from "../core/camera";
+import { cappedPixelRatio, viewportSize } from "./device";
 
 // Keeps the renderer, camera and post-processing composer in sync with the
 // window size. Also re-applies a sensible pixel ratio (important on phones
@@ -12,24 +13,30 @@ export function onResize(
   composer: EffectComposer | null,
   container: HTMLElement,
 ): () => void {
+  let raf = 0;
+
   const handle = () => {
-    const w = container.clientWidth || window.innerWidth;
-    const h = container.clientHeight || window.innerHeight;
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      const { width, height } = viewportSize(container);
 
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
+      updateCameraForViewport(camera, width, height);
 
-    renderer.setPixelRatio(cappedPixelRatio());
-    renderer.setSize(w, h);
-    composer?.setSize(w, h);
+      renderer.setPixelRatio(cappedPixelRatio());
+      renderer.setSize(width, height);
+      composer?.setSize(width, height);
+    });
   };
 
   window.addEventListener("resize", handle);
   window.addEventListener("orientationchange", handle);
+  window.visualViewport?.addEventListener("resize", handle);
   handle();
 
   return () => {
+    cancelAnimationFrame(raf);
     window.removeEventListener("resize", handle);
     window.removeEventListener("orientationchange", handle);
+    window.visualViewport?.removeEventListener("resize", handle);
   };
 }

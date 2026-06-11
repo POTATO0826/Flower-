@@ -1,7 +1,7 @@
 // Lofi music for the music button. Two modes:
 //
-//  1. If a file exists at /lofi.mp3 (drop your favourite track into public/),
-//     it is played on loop.
+//  1. If a file exists in public/ as SONG.mp3 or lofi.mp3, it is played on
+//     loop.
 //  2. Otherwise a small procedural lofi engine takes over: a slow jazzy
 //     chord loop, soft kick & snare, ticking hats, a lazy bass and vinyl
 //     crackle — all generated live with the Web Audio API, no files needed.
@@ -17,6 +17,7 @@ export interface AmbientMusic {
 
 const BPM = 72;
 const SECONDS_PER_BEAT = 60 / BPM;
+const CUSTOM_TRACK_URLS = ["/SONG.mp3", "/lofi.mp3"];
 
 // A classic descending lofi progression: Fmaj7 → Em7 → Dm7 → Cmaj7.
 // Notes are MIDI numbers; one chord per bar.
@@ -34,17 +35,18 @@ export function createAmbientMusic(): AmbientMusic {
   let playing = false;
 
   // --- optional custom track -------------------------------------------------
-  // Probe /lofi.mp3 up front; if it loads we use it, otherwise the engine.
+  // Try custom MP3s from public/ first. If none can play, use the engine.
   let customTrack: HTMLAudioElement | null = null;
-  const probe = new Audio();
-  probe.preload = "auto";
-  probe.loop = true;
-  probe.volume = 0.55;
-  probe.addEventListener("canplaythrough", () => (customTrack = probe), {
-    once: true,
-  });
-  probe.addEventListener("error", () => (customTrack = null), { once: true });
-  probe.src = "/lofi.mp3";
+  let customTrackIndex = 0;
+  let startToken = 0;
+
+  const makeCustomTrack = (src: string): HTMLAudioElement => {
+    const audio = new Audio(src);
+    audio.preload = "auto";
+    audio.loop = true;
+    audio.volume = 0.55;
+    return audio;
+  };
 
   // --- procedural engine state ----------------------------------------------
   let ctx: AudioContext | null = null;
@@ -251,19 +253,31 @@ export function createAmbientMusic(): AmbientMusic {
 
   // --- public API ----------------------------------------------------------------
 
-  const start = () => {
-    if (customTrack) {
-      void customTrack.play().catch(() => {
-        // The file failed after all — fall back to the engine.
-        customTrack = null;
-        startEngine();
-      });
-    } else {
+  const playCustomTrack = async (token: number): Promise<void> => {
+    if (customTrackIndex >= CUSTOM_TRACK_URLS.length) {
       startEngine();
+      return;
+    }
+
+    customTrack ??= makeCustomTrack(CUSTOM_TRACK_URLS[customTrackIndex]);
+
+    try {
+      await customTrack.play();
+    } catch {
+      if (token !== startToken) return;
+      customTrack = null;
+      customTrackIndex++;
+      await playCustomTrack(token);
     }
   };
 
+  const start = () => {
+    const token = ++startToken;
+    void playCustomTrack(token);
+  };
+
   const stop = () => {
+    startToken++;
     if (customTrack && !customTrack.paused) customTrack.pause();
     else stopEngine();
   };

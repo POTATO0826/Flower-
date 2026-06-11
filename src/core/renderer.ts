@@ -1,18 +1,16 @@
 import * as THREE from "three";
-import { cappedPixelRatio } from "../utils/device";
+import { cappedPixelRatio, viewportSize } from "../utils/device";
 
 // Creates the WebGL renderer and attaches its canvas to the container.
 export function createRenderer(container: HTMLElement): THREE.WebGLRenderer {
+  const { width, height } = viewportSize(container);
   const renderer = new THREE.WebGLRenderer({
     antialias: true,
     powerPreference: "high-performance",
   });
 
   renderer.setPixelRatio(cappedPixelRatio());
-  renderer.setSize(
-    container.clientWidth || window.innerWidth,
-    container.clientHeight || window.innerHeight,
-  );
+  renderer.setSize(width, height);
 
   // Nicer colour + tone mapping for the soft, photographic look.
   renderer.outputColorSpace = THREE.SRGBColorSpace;
