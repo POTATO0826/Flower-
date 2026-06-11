@@ -159,26 +159,41 @@ export function createFlowerScene(
   );
   head.add(hitbox);
 
-  // Extra blossoms along the wood — the branch blooms as a cluster.
+  // Extra blossoms around the wood — the branch blooms as a cluster. Each
+  // one hangs on its own short stalk (pedicel) so the wide-open petals sit
+  // well clear of the trunk instead of sinking into it.
   const up = new THREE.Vector3(0, 1, 0);
+  const STALK_LENGTH = 0.36;
   const clusterFlowers: RealFlower[] = [];
+  const clusterStalks: THREE.Mesh[] = [];
   if (cfg.extraFlowers) {
+    const stalkGeo = new THREE.CylinderGeometry(0.013, 0.022, STALK_LENGTH, 5);
+    stalkGeo.translate(0, STALK_LENGTH / 2, 0); // pivot at the bark end
+    const stalkMat = new THREE.MeshStandardMaterial({
+      color: cfg.branch.color ?? 0x4a3a2c,
+      roughness: 0.9,
+    });
     branch.attachPoints.forEach((spot, i) => {
       const flower = cfg.extraFlowers!.make();
       const holder = new THREE.Group();
-      // Sit right on the wood — floating a flower off its twig reads as a
-      // missing branch.
-      holder.position.copy(spot.position).addScaledVector(spot.direction, 0.04);
-      // Lean outward (halfway between "up" and the spot's facing direction).
+      holder.position.copy(spot.position).addScaledVector(spot.direction, STALK_LENGTH);
+      // Lean outward (partway between "up" and the stalk's direction).
       holder.quaternion.setFromUnitVectors(
         up,
-        spot.direction.clone().lerp(up, 0.45).normalize(),
+        spot.direction.clone().lerp(up, 0.4).normalize(),
       );
       holder.rotateY(Math.random() * Math.PI * 2);
       holder.scale.setScalar(cfg.extraFlowers!.scales?.[i] ?? 0.75);
       holder.add(flower.group);
-      plant.add(holder);
+
+      const stalk = new THREE.Mesh(stalkGeo, stalkMat);
+      stalk.position.copy(spot.position);
+      stalk.quaternion.setFromUnitVectors(up, spot.direction);
+      stalk.scale.setScalar(0.0001); // grows out right before its flower
+
+      plant.add(stalk, holder);
       clusterFlowers.push(flower);
+      clusterStalks.push(stalk);
     });
   }
 
@@ -238,6 +253,13 @@ export function createFlowerScene(
   // spot has finished growing.
   clusterFlowers.forEach((flower, i) => {
     const at = 4.4 + branch.attachPoints[i].order * 0.45;
+    // The little stalk sprouts from the bark first...
+    tl.to(
+      clusterStalks[i].scale,
+      { x: 1, y: 1, z: 1, duration: 0.5, ease: "power1.out" },
+      at - 0.3,
+    );
+    // ...then its blossom forms and unfurls at the far end.
     if (flower.center) {
       tl.to(
         flower.center.scale,
@@ -254,21 +276,24 @@ export function createFlowerScene(
     bloomed = true;
   }, openEnd - 0.4);
 
-  // --- tap the flower: glow pulse + heart burst -------------------------------
+  // --- glow pulse + heart burst: plays by itself every little while, and a
+  // tap on the flower still triggers it on demand.
   const activate = (_first: boolean) => {
     hearts.burst(head.getWorldPosition(new THREE.Vector3()));
     gsap.fromTo(
       exp.bloomPass,
       { strength: baseBloom },
       {
-        strength: baseBloom + 1.1,
-        duration: 0.4,
+        strength: baseBloom + 0.8,
+        duration: 0.5,
         yoyo: true,
         repeat: 1,
-        ease: "power2.out",
+        ease: "sine.out",
       },
     );
   };
+  const BURST_EVERY = 7; // seconds between automatic bursts
+  let burstTimer = BURST_EVERY - 1.5; // first one shortly after the bloom
   const disposeInteraction = setupInteraction({
     domElement: exp.renderer.domElement,
     camera: exp.camera,
@@ -307,11 +332,18 @@ export function createFlowerScene(
     cfg.flower.update?.(dt, elapsed);
     for (const flower of clusterFlowers) flower.update?.(dt, elapsed);
     dressUpdate?.(dt, elapsed);
+    hearts.update(exp.camera, elapsed);
     if (bloomed) {
       // The whole plant sways gently, like a light breeze.
       plant.rotation.z = Math.sin(elapsed * 0.5) * 0.02;
       head.position.y = branch.top.y + Math.sin(elapsed * 0.8) * 0.025;
       head.rotation.y += dt * headSpin;
+      // Hearts rise from the blossom on their own, every little while.
+      burstTimer += dt;
+      if (burstTimer >= BURST_EVERY) {
+        burstTimer = 0;
+        activate(false);
+      }
     }
   });
 

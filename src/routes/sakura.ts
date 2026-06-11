@@ -62,7 +62,7 @@ export function initSakura(container: HTMLElement): () => void {
     // Kept small and low so the hero blossom clearly stands on its own.
     extraFlowers: {
       make: () => createBlossom({ stamens: 10 }),
-      scales: [0.62, 0.58, 0.52, 0.48],
+      scales: [0.62, 0.55, 0.52, 0.48, 0.5, 0.45],
     },
     particles: {
       // A few sakura petals drifting down from the trees — calm, not a storm
@@ -137,7 +137,7 @@ export function initSakura(container: HTMLElement): () => void {
       scene.add(carpet);
 
       // --- tiny wildflowers peeking out of the snow --------------------------
-      const tinyCount = scaledCount(90);
+      const tinyCount = scaledCount(110);
       const tinyFlowers = new THREE.InstancedMesh(
         makeTinyFlowerGeometry(),
         new THREE.MeshStandardMaterial({
@@ -150,8 +150,8 @@ export function initSakura(container: HTMLElement): () => void {
         tinyCount,
       );
       for (let i = 0; i < tinyCount; i++) {
-        // Keep a clearing around the hero branch.
-        const r = 1.6 + Math.pow(Math.random(), 0.8) * 8;
+        // Right up to the branch's foot, thinning into the distance.
+        const r = 0.5 + Math.pow(Math.random(), 0.8) * 9;
         const a = Math.random() * Math.PI * 2;
         pos.set(Math.cos(a) * r, -1.235, Math.sin(a) * r);
         euler.set(0, Math.random() * Math.PI * 2, 0);
@@ -246,18 +246,18 @@ export function initSakura(container: HTMLElement): () => void {
         scene.add(tree);
       }
 
-      // --- a little snow drifting through the air -------------------------
+      // --- snow drifting steadily through the night ------------------------
       const snow = createParticles({
-        count: 110,
+        count: 420,
         color: 0xffffff,
-        radius: 7,
+        radius: 8,
         height: 6,
-        size: 0.05,
-        rise: -0.12,
+        size: 0.06,
+        rise: -0.15,
         baseY: -1.3,
         texture: makeSoftCircleTexture(),
       });
-      snow.material.opacity = 0.7; // snow falls from the very beginning
+      snow.material.opacity = 0.8; // snow falls from the very beginning
       scene.add(snow.points);
 
       // --- a soft halo of moon-pink light around the blossom ----------------

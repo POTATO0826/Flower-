@@ -26,13 +26,17 @@ export function createBlossom(options: BlossomOptions = {}): RealFlower {
   const sakuraProfile = (t: number) =>
     Math.sin(Math.PI * Math.min(1, t * 0.92 + 0.08)) ** 0.5;
 
+  // Fully open and almost flat, petals overlapping into a full round face —
+  // the classic illustrated bloom — while keeping the sakura tip notch.
   const petalGeo = createPetalGeometry({
-    length: 0.62,
-    width: 0.56, // narrow enough that the five petals stay distinct
+    length: 0.6,
+    width: 0.62,
     widthProfile: sakuraProfile,
-    cup: 0.1, // soft and nearly flat — real sakura petals barely cup
-    arch: 0.05,
-    curl: 0.02,
+    cup: 0.06, // barely cupped: the bloom reads as a flat open face
+    arch: 0.03,
+    curl: 0.015,
+    ruffle: 0.012, // just a hint of wave — keeps the edge smooth and tidy
+    ruffleFreq: 2.5,
     // Kept shallow: a deep notch folds the mesh over itself and the fold
     // shows up as black blobs on the petal tips.
     notch: 0.05,
@@ -45,15 +49,17 @@ export function createBlossom(options: BlossomOptions = {}): RealFlower {
   // The faint pink self-glow keeps the blossom luminous under the moon.
   const petalMat = createPetalMaterial(0xffe2ec, 0.5, 0xff6a9a, 0.14);
 
-  // One neat ring of five — spaced out so each petal reads on its own.
+  // One neat ring of five, opening flat and shingled so the petals overlap
+  // cleanly instead of criss-crossing through each other.
   addPetalRing(group, petals, petalGeo, petalMat, {
     count: 5,
-    radius: 0.09,
+    radius: 0.085,
     y: 0,
-    openTilt: 1.22, // opens wide and flat, like a pressed blossom
+    openTilt: 1.45, // ~83°: a fully open, face-on bloom
     scale: 1,
     spin: 0,
-    jitter: 0.3,
+    jitter: 0.04, // almost perfectly regular — a tidy, symmetric blossom
+    shingle: 0.007,
   });
 
   // --- stamens: a tidy ring of fine filaments with golden tips -------------
@@ -78,7 +84,8 @@ export function createBlossom(options: BlossomOptions = {}): RealFlower {
     const a = (i / stamenCount) * Math.PI * 2;
     const stamen = new THREE.Group();
     stamen.rotation.y = a;
-    stamen.rotation.x = 0.3 + (i % 3) * 0.12; // even, slightly varied splay
+    // Splayed wide over the flat-open petals, in a neat even fan.
+    stamen.rotation.x = 0.5 + (i % 2) * 0.12;
 
     const filament = new THREE.Mesh(filamentGeo, filamentMat);
     const anther = new THREE.Mesh(antherGeo, antherMat);
@@ -109,8 +116,8 @@ export function createBlossom(options: BlossomOptions = {}): RealFlower {
   center.scale.setScalar(0.0001); // scales in with the bud
   group.add(center);
 
-  // The blossom faces gently outward (not straight up) like on a real branch.
-  group.rotation.x = 0.4;
+  // The blossom faces outward toward the viewer, showing its full open face.
+  group.rotation.x = 0.55;
 
   return { group, petals, center };
 }

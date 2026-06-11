@@ -136,6 +136,12 @@ export interface RingConfig {
   spin?: number;
   /** 0..1 organic randomness in tilt / twist / scale. */
   jitter?: number;
+  /**
+   * Lift each successive petal this much, so overlaps stack cleanly like
+   * shingles. Criss-crossing petals show their dark backsides through each
+   * other as black blotches — stacking prevents that.
+   */
+  shingle?: number;
 }
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
@@ -164,6 +170,7 @@ export function addPetalRing(
 
     const holder = new THREE.Group(); // the bloom tilts this outward
     holder.position.z = cfg.radius;
+    holder.position.y = i * (cfg.shingle ?? 0);
     holder.rotation.x = closed + rand(-1, 1) * 0.03 * jitter;
 
     const mesh = new THREE.Mesh(geometry, material);

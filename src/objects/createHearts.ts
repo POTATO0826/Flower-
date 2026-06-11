@@ -11,6 +11,11 @@ export interface HeartsResult {
   group: THREE.Group;
   /** Spawn a burst of hearts rising from a world position. */
   burst(origin: THREE.Vector3): void;
+  /**
+   * Call once per frame: keeps the flat heart shapes facing the camera
+   * (edge-on they'd vanish) and adds a gentle floating sway.
+   */
+  update(camera: THREE.Camera, elapsed: number): void;
 }
 
 function heartShape(): THREE.Shape {
@@ -53,39 +58,57 @@ export function createHearts(options: HeartsOptions = {}): HeartsResult {
     hearts.push(mesh);
   }
 
+  // Per-heart sway phase, so the floating wobble differs heart to heart.
+  const phases = hearts.map(() => Math.random() * Math.PI * 2);
+
   const burst = (origin: THREE.Vector3) => {
     hearts.forEach((heart, i) => {
       const mat = heart.material as THREE.MeshBasicMaterial;
       const a = (i / hearts.length) * Math.PI * 2 + Math.random();
-      const spread = 0.6 + Math.random() * 0.8;
+      const spread = 0.5 + Math.random() * 0.9;
+      const size = 0.75 + Math.random() * 0.5;
+      const delay = i * 0.05; // bloom outward one after another, not as a clap
 
       heart.visible = true;
       heart.position.copy(origin);
-      heart.scale.setScalar(0.3);
-      heart.rotation.z = (Math.random() - 0.5) * 0.6;
+      heart.scale.setScalar(0.2);
       mat.opacity = 0;
 
       const tl = gsap.timeline({
+        delay,
         onComplete: () => {
           heart.visible = false;
         },
       });
-      tl.to(mat, { opacity: 1, duration: 0.4 }, 0)
-        .to(heart.scale, { x: 1, y: 1, z: 1, duration: 0.5, ease: "back.out(2)" }, 0)
+      tl.to(mat, { opacity: 0.95, duration: 0.35, ease: "sine.out" }, 0)
+        .to(
+          heart.scale,
+          { x: size, y: size, z: size, duration: 0.6, ease: "back.out(1.8)" },
+          0,
+        )
+        // A slow rise that keeps easing off, like a heart caught by the breeze.
         .to(
           heart.position,
           {
             x: origin.x + Math.cos(a) * spread,
-            y: origin.y + 1.4 + Math.random() * 0.8,
+            y: origin.y + 1.8 + Math.random() * 1.0,
             z: origin.z + Math.sin(a) * spread,
-            duration: 1.8,
-            ease: "power1.out",
+            duration: 2.6,
+            ease: "power2.out",
           },
           0,
         )
-        .to(mat, { opacity: 0, duration: 0.8 }, 1.0);
+        .to(mat, { opacity: 0, duration: 1.0, ease: "sine.in" }, 1.6);
     });
   };
 
-  return { group, burst };
+  const update = (camera: THREE.Camera, elapsed: number) => {
+    hearts.forEach((heart, i) => {
+      if (!heart.visible) return;
+      heart.quaternion.copy(camera.quaternion); // always face the viewer
+      heart.rotation.z += Math.sin(elapsed * 2.4 + phases[i]) * 0.12; // sway
+    });
+  };
+
+  return { group, burst, update };
 }
