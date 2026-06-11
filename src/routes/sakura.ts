@@ -62,7 +62,7 @@ export function initSakura(container: HTMLElement): () => void {
     // Kept small and low so the hero blossom clearly stands on its own.
     extraFlowers: {
       make: () => createBlossom({ stamens: 10 }),
-      scales: [0.62, 0.55, 0.52, 0.48, 0.5, 0.45],
+      scales: [0.55, 0.5, 0.58],
     },
     particles: {
       // A few sakura petals drifting down from the trees — calm, not a storm

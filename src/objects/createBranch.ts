@@ -151,38 +151,23 @@ export function createBranch(options: BranchOptions = {}): BranchResult {
   // Spots for extra blossoms: two right on the bough (sakura flowers sprout
   // straight from the bark) and one beside each twig-tip bud, so every twig
   // ends in a bud-plus-flower cluster like a real branch.
-  // Kept low on the bough so the hero blossom at the tip stands alone, and
-  // pointed to four different sides so the cluster never bunches up.
+  // Just three blossoms — one per twig tip, each facing its own side, so the
+  // branch reads clean and the hero at the top clearly leads.
   const attachPoints: BranchAttachPoint[] = [
-    {
-      position: mainCurve.getPoint(0.45).add(new THREE.Vector3(0.02 * s, 0.02, 0.06 * s)),
-      direction: new THREE.Vector3(0.15, 0.2, 0.95).normalize(), // front
-      order: 0,
-    },
-    {
-      position: mainCurve.getPoint(0.58).add(new THREE.Vector3(-0.05 * s, 0, 0.04 * s)),
-      direction: new THREE.Vector3(-0.85, 0.2, 0.45).normalize(), // left
-      order: 1,
-    },
     {
       position: twig1.tip.clone(),
       direction: new THREE.Vector3(0.6, 0.3, 0.35).normalize(), // right
-      order: 2,
+      order: 1,
     },
     {
       position: twig2.tip.clone(),
       direction: new THREE.Vector3(-0.45, 0.3, -0.6).normalize(), // back-left
-      order: 3,
+      order: 2, // this twig finishes growing last
     },
     {
       position: twig3.tip.clone(),
       direction: new THREE.Vector3(-0.5, 0.25, 0.65).normalize(), // front-left, low
-      order: 4,
-    },
-    {
-      position: mainCurve.getPoint(0.24).add(new THREE.Vector3(0.04 * s, 0.02, -0.04 * s)),
-      direction: new THREE.Vector3(0.7, 0.3, -0.6).normalize(), // back-right, low
-      order: 5,
+      order: 0, // the low twig is ready first
     },
   ];
 
