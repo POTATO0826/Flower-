@@ -42,6 +42,23 @@ export function createComposer(
     bloom.radius,
     bloom.threshold,
   );
+
+  // Scrub NaN / infinity before they enter the bloom blur. Apple GPUs
+  // occasionally produce invalid pixels (e.g. at grazing angles of glossy
+  // materials); the gaussian blur then smears a single bad texel into a
+  // whole disc of random-colored dots around anything bright. Killing them
+  // at the high-pass keeps the glow clean everywhere.
+  const lumMat = bloomPass.materialHighPassFilter;
+  lumMat.fragmentShader = lumMat.fragmentShader.replace(
+    "vec4 texel = texture2D( tDiffuse, vUv );",
+    [
+      "vec4 texel = texture2D( tDiffuse, vUv );",
+      "if (any(notEqual(texel, texel)) || any(greaterThan(abs(texel), vec4(65000.0)))) texel = vec4(0.0);",
+      "texel = clamp(texel, 0.0, 16.0);",
+    ].join("\n\t\t\t\t"),
+  );
+  lumMat.needsUpdate = true;
+
   composer.addPass(bloomPass);
 
   return { composer, bloomPass };

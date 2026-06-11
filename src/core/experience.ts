@@ -7,6 +7,7 @@ import { createCamera } from "./camera";
 import { createScene } from "./createScene";
 import { createComposer, type BloomOptions } from "./postprocessing";
 import { onResize } from "../utils/resize";
+import { isAppleWebKit } from "../utils/device";
 
 // The "experience" ties the whole render stack together: renderer, scene,
 // camera, bloom composer, a clock, the animation loop, and tidy disposal.
@@ -44,10 +45,15 @@ export function createExperience(
 
   // Image-based lighting: a neutral "room" environment gives petals and
   // glass-like materials realistic soft reflections without any HDR files.
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  scene.environmentIntensity = options.environmentIntensity ?? 0.45;
-  pmrem.dispose();
+  // Skipped on Apple WebKit: PMREM generation there can bake invalid texels
+  // that later surface as rainbow speckles through the bloom pass, and at
+  // our night-time intensity the reflections are imperceptible anyway.
+  if (!isAppleWebKit()) {
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environmentIntensity = options.environmentIntensity ?? 0.45;
+    pmrem.dispose();
+  }
   const { composer, bloomPass } = createComposer(
     renderer,
     scene,
