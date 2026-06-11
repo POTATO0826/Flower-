@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- App icon: a sakura blossom on a soft pink sky -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b0c1d"/>
+      <stop offset="1" stop-color="#2c1a2c"/>
+    </linearGradient>
+    <radialGradient id="petal" cx="0.5" cy="0.8" r="0.9">
+      <stop offset="0" stop-color="#ff85b0"/>
+      <stop offset="0.55" stop-color="#ffc9dc"/>
+      <stop offset="1" stop-color="#fff4f8"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#bg)"/>
+  <!-- five notched sakura petals -->
+  <g fill="url(#petal)">
+    <g transform="translate(256 256)">
+      <path id="p" d="M0,-26 C 34,-52 66,-110 32,-150 C 16,-168 8,-162 0,-148 C -8,-162 -16,-168 -32,-150 C -66,-110 -34,-52 0,-26 Z"/>
+      <use href="#p" transform="rotate(72)"/>
+      <use href="#p" transform="rotate(144)"/>
+      <use href="#p" transform="rotate(216)"/>
+      <use href="#p" transform="rotate(288)"/>
+    </g>
+  </g>
+  <!-- stamens -->
+  <g stroke="#fff0f5" stroke-width="6" stroke-linecap="round">
+    <line x1="256" y1="256" x2="256" y2="206"/>
+    <line x1="256" y1="256" x2="298" y2="226"/>
+    <line x1="256" y1="256" x2="214" y2="226"/>
+    <line x1="256" y1="256" x2="282" y2="298"/>
+    <line x1="256" y1="256" x2="230" y2="298"/>
+  </g>
+  <g fill="#ffc83a">
+    <circle cx="256" cy="202" r="10"/>
+    <circle cx="302" cy="222" r="10"/>
+    <circle cx="210" cy="222" r="10"/>
+    <circle cx="286" cy="302" r="10"/>
+    <circle cx="226" cy="302" r="10"/>
+  </g>
+  <circle cx="256" cy="256" r="12" fill="#ff9ec4"/>
+</svg>

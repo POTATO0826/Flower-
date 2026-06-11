@@ -1,0 +1,18 @@
+{
+  "name": "Sakura",
+  "short_name": "Sakura",
+  "description": "A cherry blossom that blooms just for you.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0c1d",
+  "theme_color": "#0b0c1d",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

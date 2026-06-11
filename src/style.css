@@ -1,0 +1,120 @@
+/* ----------------------------------------------------------------------
+   Base / reset — mobile first, dark and quiet
+---------------------------------------------------------------------- */
+:root {
+  --sans: "Poppins", system-ui, sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+  background: #0b0c1d;
+  font-family: var(--sans);
+  overflow: hidden; /* one full-screen experience, like an app */
+  /* Phone niceties: no rubber-band bounce, no pull-to-refresh,
+     no accidental text/image selection while dragging the camera. */
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+body {
+  /* Pin the page on iOS Safari so the address bar can't scroll-bounce it. */
+  position: fixed;
+  inset: 0;
+}
+
+#app {
+  position: relative;
+  width: 100vw;
+  min-height: 100vh;
+  /* Use dynamic viewport height so mobile browser chrome doesn't clip it. */
+  min-height: 100dvh;
+}
+
+/* The Three.js canvas fills the screen. */
+#app canvas {
+  display: block;
+  position: fixed;
+  inset: 0;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  touch-action: none; /* let us handle touch parallax without scrolling */
+}
+
+/* Loading splash shown while the 3D chunk downloads. */
+.loading {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, #0b0c1d 0%, #2c1a2c 100%);
+}
+.loading-flower {
+  font-size: 3rem;
+  animation: loadingSpin 1.6s ease-in-out infinite;
+}
+@keyframes loadingSpin {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.15) rotate(180deg);
+    opacity: 0.9;
+  }
+}
+
+/* ----------------------------------------------------------------------
+   Overlay: a single, quiet music button
+---------------------------------------------------------------------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none; /* taps pass through to the canvas... */
+}
+
+.ui-button {
+  position: fixed;
+  z-index: 20;
+  pointer-events: auto; /* ...except the button */
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  font-size: 1.1rem;
+  border-radius: 50%;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: background 0.25s ease, transform 0.15s ease, opacity 0.25s ease;
+}
+.ui-button:active {
+  transform: scale(0.92);
+}
+
+.music {
+  top: max(1rem, env(safe-area-inset-top));
+  right: max(1rem, env(safe-area-inset-right));
+  color: rgba(255, 214, 230, 0.85);
+  background: rgba(28, 22, 38, 0.45);
+  border: 1px solid rgba(255, 214, 230, 0.18);
+  opacity: 0.75;
+}
+.music.active {
+  opacity: 1;
+  background: rgba(60, 36, 58, 0.6);
+  border-color: rgba(255, 214, 230, 0.4);
+}
