@@ -1,11 +1,14 @@
 import * as THREE from "three";
-import { cappedPixelRatio, viewportSize } from "../utils/device";
+import { cappedPixelRatio, isAppleWebKit, viewportSize } from "../utils/device";
 
 // Creates the WebGL renderer and attaches its canvas to the container.
 export function createRenderer(container: HTMLElement): THREE.WebGLRenderer {
   const { width, height } = viewportSize(container);
   const renderer = new THREE.WebGLRenderer({
-    antialias: true,
+    // MSAA + the bloom composer triggers a WebKit bug on Apple GPUs that
+    // sprays rainbow pixels around bright objects — render without it there
+    // (the retina pixel ratio hides the missing AA anyway).
+    antialias: !isAppleWebKit(),
     powerPreference: "high-performance",
   });
 

@@ -40,11 +40,11 @@ export function addLighting(
   };
 
   // Faint night-sky ambience (cool above, plum below).
-  add(new THREE.HemisphereLight(0x2e3458, 0x241726, 0.55));
-  // Moonlight: dim, cool, casting the soft shadow.
-  add(makeKeyLight(0xbfcfff, 1.1, new THREE.Vector3(-3, 5.5, 2.5)));
+  add(new THREE.HemisphereLight(0x2e3458, 0x241726, 0.42));
+  // Moonlight: dim, cool, casting the soft shadow over the snow.
+  add(makeKeyLight(0xbfcfff, 0.85, new THREE.Vector3(-3, 5.5, 2.5)));
   // The gentlest pink lantern-glow near the blossom.
-  const pink = add(new THREE.PointLight(0xff9ec4, 0.5, 10));
+  const pink = add(new THREE.PointLight(0xff9ec4, 0.35, 10));
   pink.position.set(1.5, 1.5, 2);
 
   return lights;

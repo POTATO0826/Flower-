@@ -3,7 +3,7 @@ import gsap from "gsap";
 import { createExperience } from "../core/experience";
 import { addLighting, type LightingPreset } from "../core/lighting";
 import type { BloomOptions } from "../core/postprocessing";
-import { createPointerTracker } from "../utils/mouse";
+import { createOrbitDrag } from "../utils/mouse";
 import { createOverlay } from "../utils/ui";
 import { makeGradientTexture } from "../utils/textures";
 import {
@@ -22,7 +22,7 @@ import {
   bloomPetals,
   fadeInMaterial,
 } from "../animations/bloomAnimation";
-import { SmoothedPointer, updateOrbitCamera } from "../animations/cameraAnimation";
+import { updateOrbitCamera } from "../animations/cameraAnimation";
 
 // The shared "flower experience". The config decides which flower, lighting,
 // sky and particles; this builds the whole journey:
@@ -46,12 +46,21 @@ export interface FlowerSceneConfig {
   flower: RealFlower;
   /** Scale of the flower head. */
   headScale?: number;
+  /**
+   * Extra smaller blossoms sprouting from the branch's attach points, so the
+   * branch carries a whole flowering cluster instead of a single bloom.
+   */
+  extraFlowers?: {
+    make: () => RealFlower;
+    /** Scale per attach point (falls back to 0.75). */
+    scales?: number[];
+  };
   /** Y of the ground / flower base. */
   flowerY?: number;
   particles: ParticlesOptions;
   particleOpacity?: number;
   heartsColor: number;
-  orbit: { radius: number; height: number; speed: number; parallax: number };
+  orbit: { radius: number; height: number; speed: number };
   /** Petal open pacing. */
   openStagger?: number;
   openDuration?: number;
@@ -64,7 +73,7 @@ export interface FlowerSceneConfig {
 function responsiveOrbit(
   container: HTMLElement,
   orbit: FlowerSceneConfig["orbit"],
-): FlowerSceneConfig["orbit"] & { parallaxHeight: number } {
+): FlowerSceneConfig["orbit"] {
   const { width, height } = viewportSize(container);
   const narrow = width < 768;
   const compact = Math.min(width, height) < 520;
@@ -74,8 +83,6 @@ function responsiveOrbit(
     radius: orbit.radius * radiusScale,
     height: orbit.height,
     speed: orbit.speed,
-    parallax: orbit.parallax * (compact || narrow ? 0.6 : 1),
-    parallaxHeight: compact ? 0.22 : narrow ? 0.32 : 0.5,
   };
 }
 
@@ -116,7 +123,7 @@ export function createFlowerScene(
       length: 0.34,
       width: 0.34,
       cup: 0.12,
-      notch: 0.1,
+      notch: 0.05,
       baseColor: 0xff85b0,
       midColor: 0xffc9dc,
       tipColor: 0xfff6f9,
@@ -151,6 +158,29 @@ export function createFlowerScene(
     new THREE.MeshBasicMaterial({ visible: false }),
   );
   head.add(hitbox);
+
+  // Extra blossoms along the wood — the branch blooms as a cluster.
+  const up = new THREE.Vector3(0, 1, 0);
+  const clusterFlowers: RealFlower[] = [];
+  if (cfg.extraFlowers) {
+    branch.attachPoints.forEach((spot, i) => {
+      const flower = cfg.extraFlowers!.make();
+      const holder = new THREE.Group();
+      // Sit right on the wood — floating a flower off its twig reads as a
+      // missing branch.
+      holder.position.copy(spot.position).addScaledVector(spot.direction, 0.04);
+      // Lean outward (halfway between "up" and the spot's facing direction).
+      holder.quaternion.setFromUnitVectors(
+        up,
+        spot.direction.clone().lerp(up, 0.45).normalize(),
+      );
+      holder.rotateY(Math.random() * Math.PI * 2);
+      holder.scale.setScalar(cfg.extraFlowers!.scales?.[i] ?? 0.75);
+      holder.add(flower.group);
+      plant.add(holder);
+      clusterFlowers.push(flower);
+    });
+  }
 
   const particles = createParticles(cfg.particles);
   exp.scene.add(particles.points);
@@ -204,6 +234,19 @@ export function createFlowerScene(
     stagger: cfg.openStagger ?? 0.05,
     duration: cfg.openDuration ?? 1.5,
   });
+  // 5b: the cluster blossoms follow one by one, each after the wood at its
+  // spot has finished growing.
+  clusterFlowers.forEach((flower, i) => {
+    const at = 4.4 + branch.attachPoints[i].order * 0.45;
+    if (flower.center) {
+      tl.to(
+        flower.center.scale,
+        { x: 1, y: 1, z: 1, duration: 0.7, ease: "back.out(1.5)" },
+        at + 0.1,
+      );
+    }
+    bloomPetals(tl, flower.petals, at, at + 0.8, { stagger: 0.1, duration: 1.6 });
+  });
   // 6: particles drift in while the flower opens.
   fadeInMaterial(tl, particles.material, 5.5, cfg.particleOpacity ?? 0.75);
   // The flower starts its idle sway once fully open.
@@ -233,32 +276,36 @@ export function createFlowerScene(
     onActivate: activate,
   });
 
-  // --- 7: slow orbit camera + parallax --------------------------------------
-  const tracker = createPointerTracker(container);
-  const pointer = new SmoothedPointer();
+  // --- 7: orbit camera: drag to spin 360°, slow auto-turn after the bloom ---
+  const orbitDrag = createOrbitDrag(exp.renderer.domElement);
   const target = new THREE.Vector3(0, flowerY + branch.top.y * 0.85, 0);
   const headSpin = cfg.headSpin ?? 0.08;
+  let autoAngle = 0;
+  let spinRamp = 0; // 0 while the flower opens; eases to 1 once bloomed
 
   exp.onUpdate((dt, elapsed) => {
-    pointer.update(tracker);
+    orbitDrag.update(dt);
     // The intro petal tumbles gently while it falls.
     if (!introLanded) {
       introPetal.rotation.x = Math.sin(elapsed * 2.2) * 0.7;
       introPetal.rotation.y += dt * 1.6;
       introPetal.rotation.z = Math.cos(elapsed * 1.7) * 0.5;
     }
+    // The camera holds still for the bloom, then the slow turn fades in.
+    if (bloomed) spinRamp = Math.min(1, spinRamp + dt / 2.5);
+    const ease = spinRamp * spinRamp * (3 - 2 * spinRamp);
+    const orbit = responsiveOrbit(container, cfg.orbit);
+    autoAngle += orbit.speed * ease * dt;
     updateOrbitCamera(
       exp.camera,
-      {
-        ...responsiveOrbit(container, cfg.orbit),
-        target,
-      },
-      elapsed,
-      pointer,
+      { target, radius: orbit.radius, height: orbit.height },
+      autoAngle + orbitDrag.angle,
+      orbitDrag.lift,
     );
     particles.update(dt, elapsed);
     branch.update(dt, elapsed);
     cfg.flower.update?.(dt, elapsed);
+    for (const flower of clusterFlowers) flower.update?.(dt, elapsed);
     dressUpdate?.(dt, elapsed);
     if (bloomed) {
       // The whole plant sways gently, like a light breeze.
@@ -274,7 +321,7 @@ export function createFlowerScene(
   return () => {
     tl.kill();
     disposeInteraction();
-    tracker.dispose();
+    orbitDrag.dispose();
     overlay.dispose();
     exp.dispose();
   };

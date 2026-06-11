@@ -6,9 +6,15 @@
 //     chord loop, soft kick & snare, ticking hats, a lazy bass and vinyl
 //     crackle — all generated live with the Web Audio API, no files needed.
 //
-// Either way it only ever starts from the user's tap (never autoplays).
+// Playback is attempted as soon as the page opens; when the browser blocks
+// autoplay (iOS always does), the very first tap anywhere starts it instead.
 
 export interface AmbientMusic {
+  /**
+   * Try to start playing right now (used for autoplay on load). Resolves
+   * false when the browser blocks it — retry from a user gesture then.
+   */
+  tryStart(): Promise<boolean>;
   /** Toggle play/pause. Returns the new playing state. */
   toggle(): boolean;
   playing(): boolean;
@@ -253,21 +259,27 @@ export function createAmbientMusic(): AmbientMusic {
 
   // --- public API ----------------------------------------------------------------
 
-  const playCustomTrack = async (token: number): Promise<void> => {
+  const playCustomTrack = async (token: number): Promise<boolean> => {
     if (customTrackIndex >= CUSTOM_TRACK_URLS.length) {
       startEngine();
-      return;
+      return true;
     }
 
     customTrack ??= makeCustomTrack(CUSTOM_TRACK_URLS[customTrackIndex]);
 
     try {
       await customTrack.play();
-    } catch {
-      if (token !== startToken) return;
+      return true;
+    } catch (err) {
+      if (token !== startToken) return false;
+      // Autoplay blocked: the track itself is fine, the browser just wants a
+      // user gesture first — keep it loaded and report failure so the caller
+      // can retry from the first tap.
+      if ((err as DOMException)?.name === "NotAllowedError") return false;
+      // Anything else (404, decode error): fall through to the next source.
       customTrack = null;
       customTrackIndex++;
-      await playCustomTrack(token);
+      return playCustomTrack(token);
     }
   };
 
@@ -283,6 +295,16 @@ export function createAmbientMusic(): AmbientMusic {
   };
 
   return {
+    async tryStart() {
+      if (playing) return true;
+      const token = ++startToken;
+      const ok = await playCustomTrack(token);
+      if (ok && token === startToken) {
+        playing = true;
+        return true;
+      }
+      return false;
+    },
     toggle() {
       if (playing) stop();
       else start();

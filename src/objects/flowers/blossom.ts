@@ -13,7 +13,12 @@ import type { Petal, RealFlower } from "./types";
 //   - a small brown calyx cupping the flower from below
 // Kept deliberately simple and symmetric so it reads instantly as a sakura.
 
-export function createBlossom(): RealFlower {
+export interface BlossomOptions {
+  /** Fewer stamens keep the small cluster blossoms cheap on phones. */
+  stamens?: number;
+}
+
+export function createBlossom(options: BlossomOptions = {}): RealFlower {
   const group = new THREE.Group();
   const petals: Petal[] = [];
 
@@ -23,12 +28,14 @@ export function createBlossom(): RealFlower {
 
   const petalGeo = createPetalGeometry({
     length: 0.62,
-    width: 0.66,
+    width: 0.56, // narrow enough that the five petals stay distinct
     widthProfile: sakuraProfile,
-    cup: 0.16, // gentle saucer shape
-    arch: 0.07,
-    curl: 0.03,
-    notch: 0.1, // the classic sakura tip notch
+    cup: 0.1, // soft and nearly flat — real sakura petals barely cup
+    arch: 0.05,
+    curl: 0.02,
+    // Kept shallow: a deep notch folds the mesh over itself and the fold
+    // shows up as black blobs on the petal tips.
+    notch: 0.05,
     baseColor: 0xff85b0, // pink heart...
     midColor: 0xffcfe0,
     tipColor: 0xfff6f9, // ...fading to white tips
@@ -38,15 +45,15 @@ export function createBlossom(): RealFlower {
   // The faint pink self-glow keeps the blossom luminous under the moon.
   const petalMat = createPetalMaterial(0xffe2ec, 0.5, 0xff6a9a, 0.14);
 
-  // One neat ring of five — low jitter keeps it tidy and "normal".
+  // One neat ring of five — spaced out so each petal reads on its own.
   addPetalRing(group, petals, petalGeo, petalMat, {
     count: 5,
-    radius: 0.06,
+    radius: 0.09,
     y: 0,
-    openTilt: 1.1, // opens into a soft, nearly flat saucer
+    openTilt: 1.22, // opens wide and flat, like a pressed blossom
     scale: 1,
     spin: 0,
-    jitter: 0.25,
+    jitter: 0.3,
   });
 
   // --- stamens: a tidy ring of fine filaments with golden tips -------------
@@ -66,9 +73,9 @@ export function createBlossom(): RealFlower {
     emissiveIntensity: 0.35,
   });
 
-  const STAMENS = 16;
-  for (let i = 0; i < STAMENS; i++) {
-    const a = (i / STAMENS) * Math.PI * 2;
+  const stamenCount = options.stamens ?? 16;
+  for (let i = 0; i < stamenCount; i++) {
+    const a = (i / stamenCount) * Math.PI * 2;
     const stamen = new THREE.Group();
     stamen.rotation.y = a;
     stamen.rotation.x = 0.3 + (i % 3) * 0.12; // even, slightly varied splay
@@ -90,9 +97,10 @@ export function createBlossom(): RealFlower {
   center.add(pistil);
 
   // --- calyx: the little brown cup under the blossom -----------------------
+  // Warm light bark tone — dark brown reads as a black spike at night.
   const calyx = new THREE.Mesh(
-    new THREE.ConeGeometry(0.09, 0.14, 8),
-    new THREE.MeshStandardMaterial({ color: 0x6b4538, roughness: 0.95 }),
+    new THREE.ConeGeometry(0.07, 0.11, 8),
+    new THREE.MeshStandardMaterial({ color: 0x8a6850, roughness: 0.95 }),
   );
   calyx.rotation.x = Math.PI; // point downward
   calyx.position.y = -0.06;

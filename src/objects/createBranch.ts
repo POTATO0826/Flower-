@@ -17,10 +17,21 @@ export interface BranchOptions {
   color?: number;
 }
 
+export interface BranchAttachPoint {
+  position: THREE.Vector3;
+  /** Outward direction the spot faces — extra blossoms lean this way. */
+  direction: THREE.Vector3;
+  /** Timeline seconds-offset hint: 0 = available as soon as the wood there
+   *  has grown, larger = later spots (twig tips finish growing last). */
+  order: number;
+}
+
 export interface BranchResult {
   group: THREE.Group;
   /** Where the main blossom sits (the branch tip). */
   top: THREE.Vector3;
+  /** Spots along the wood where extra blossoms can sprout (cluster look). */
+  attachPoints: BranchAttachPoint[];
   /** Drive this from 0 -> 1 to grow the whole branch. */
   setGrowth(t: number): void;
   /** Continuous idle motion (buds bobbing in the breeze). */
@@ -117,7 +128,9 @@ export function createBranch(options: BranchOptions = {}): BranchResult {
     const p1 = p0.clone().addScaledVector(dir, 0.5);
     const p2 = p0.clone().addScaledVector(dir, 1).add(new THREE.Vector3(0, 0.12 * s, 0));
     const curve = new THREE.CatmullRomCurve3([p0, p1, p2]);
-    const mesh = makeTaperedTube(curve, radius * 0.35, radius * 0.12, woodMat, 20);
+    // Chunky enough to read as wood at night — hairline twigs disappear
+    // against the dark sky and leave their flowers looking parentless.
+    const mesh = makeTaperedTube(curve, radius * 0.55, radius * 0.22, woodMat, 20);
     return { mesh, tip: p2 };
   };
 
@@ -169,5 +182,32 @@ export function createBranch(options: BranchOptions = {}): BranchResult {
     bud2.rotation.x = Math.sin(elapsed * 1.3 + 2) * 0.07;
   };
 
-  return { group, top: mainCurve.getPoint(1), setGrowth, update };
+  // Spots for extra blossoms: two right on the bough (sakura flowers sprout
+  // straight from the bark) and one beside each twig-tip bud, so every twig
+  // ends in a bud-plus-flower cluster like a real branch.
+  // Kept low on the bough so the hero blossom at the tip stands alone.
+  const attachPoints: BranchAttachPoint[] = [
+    {
+      position: mainCurve.getPoint(0.45).add(new THREE.Vector3(0.08 * s, 0.02, 0.14 * s)),
+      direction: new THREE.Vector3(0.55, 0.4, 0.75).normalize(),
+      order: 0,
+    },
+    {
+      position: mainCurve.getPoint(0.68).add(new THREE.Vector3(-0.12 * s, 0, -0.1 * s)),
+      direction: new THREE.Vector3(-0.7, 0.4, -0.55).normalize(),
+      order: 1,
+    },
+    {
+      position: twig1.tip.clone(),
+      direction: new THREE.Vector3(0.45, 0.55, 0.3).normalize(),
+      order: 2,
+    },
+    {
+      position: twig2.tip.clone(),
+      direction: new THREE.Vector3(-0.45, 0.5, -0.25).normalize(),
+      order: 3,
+    },
+  ];
+
+  return { group, top: mainCurve.getPoint(1), attachPoints, setGrowth, update };
 }

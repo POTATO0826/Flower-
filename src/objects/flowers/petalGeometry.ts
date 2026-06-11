@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import type { Petal } from "./types";
+import { isAppleWebKit } from "../../utils/device";
 
 // The heart of the realistic flowers: a parametric petal.
 //
@@ -102,13 +103,17 @@ export function createPetalMaterial(
   emissive?: number,
   emissiveIntensity = 0.12,
 ): THREE.MeshPhysicalMaterial {
+  // The sheen BRDF can divide by zero at grazing angles; on Apple GPUs the
+  // resulting NaNs smear through the half-float bloom buffer as rainbow
+  // speckles around the flower, so the silk sheen stays desktop-only.
+  const sheen = isAppleWebKit() ? 0 : 1;
   return new THREE.MeshPhysicalMaterial({
     color: 0xffffff,
     vertexColors: true,
     side: THREE.DoubleSide,
     roughness,
     metalness: 0,
-    sheen: 1,
+    sheen,
     sheenColor: new THREE.Color(sheenColor),
     sheenRoughness: 0.5,
     emissive: new THREE.Color(emissive ?? 0x000000),

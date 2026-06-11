@@ -15,6 +15,23 @@ export function isMobileViewport(): boolean {
   return window.innerWidth < 768;
 }
 
+/**
+ * True on Apple's WebKit GPU stack: iPhone / iPad (every iOS browser is
+ * WebKit) and Safari on macOS. These GPUs have known WebGL bugs around
+ * MSAA + post-processing render targets that show up as rainbow pixel
+ * garbage, so a few effects are toned down there.
+ */
+export function isAppleWebKit(): boolean {
+  const ua = navigator.userAgent;
+  const iDevice =
+    /iPhone|iPad|iPod/.test(ua) ||
+    // iPadOS 13+ masquerades as a Mac but is the only "Mac" with touch.
+    (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  const macSafari =
+    /Macintosh/.test(ua) && /Safari\//.test(ua) && !/Chrome|Chromium|Edg\//.test(ua);
+  return iDevice || macSafari;
+}
+
 /** Current viewport size, preferring the visual viewport on mobile browsers. */
 export function viewportSize(container?: HTMLElement): { width: number; height: number } {
   const visualViewport = window.visualViewport;

@@ -4,6 +4,11 @@ import "./style.css";
 // Whatever path is opened (/, /5, an old link...), the blossom blooms.
 // The heavy Three.js code is still lazy-loaded so the first paint is instant.
 
+// iOS Safari fires its own non-standard gesture events for pinch-zoom that
+// ignore touch-action; blocking them keeps two-finger touches from zooming
+// the page mid-scene.
+document.addEventListener("gesturestart", (e) => e.preventDefault());
+
 const app = document.getElementById("app") as HTMLDivElement;
 let cleanup: (() => void) | null = null;
 

@@ -24,6 +24,7 @@ body {
   overscroll-behavior: none;
   user-select: none;
   -webkit-user-select: none;
+  -webkit-touch-callout: none; /* no long-press callout on iOS */
   touch-action: none;
 }
 
@@ -49,7 +50,11 @@ body {
   width: 100vw !important;
   height: 100vh !important;
   height: 100dvh !important;
-  touch-action: none; /* let us handle touch parallax without scrolling */
+  touch-action: none; /* we handle drags ourselves — never scroll or zoom */
+  cursor: grab;
+}
+#app canvas:active {
+  cursor: grabbing;
 }
 
 /* Loading splash shown while the 3D chunk downloads. */

@@ -2,6 +2,19 @@ import * as THREE from "three";
 
 // Procedural textures so we never need to ship image files.
 
+/**
+ * Canvas-texture mipmap generation is flaky in WebKit (iPhone / Safari) and
+ * these sprites are soft blobs anyway — plain linear filtering is identical
+ * to the eye and dodges the bug.
+ */
+function asSafeSpriteTexture(canvas: HTMLCanvasElement): THREE.CanvasTexture {
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.generateMipmaps = false;
+  texture.minFilter = THREE.LinearFilter;
+  return texture;
+}
+
 let softCircle: THREE.Texture | null = null;
 
 /**
@@ -32,8 +45,7 @@ export function makeSoftCircleTexture(): THREE.Texture {
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, size, size);
 
-  softCircle = new THREE.CanvasTexture(canvas);
-  softCircle.colorSpace = THREE.SRGBColorSpace;
+  softCircle = asSafeSpriteTexture(canvas);
   return softCircle;
 }
 
@@ -53,9 +65,7 @@ export function makeGradientTexture(top: number, bottom: number): THREE.Texture 
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, 2, 512);
 
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
+  return asSafeSpriteTexture(canvas);
 }
 
 /** A small petal-shaped sprite (for falling sakura petals). */
@@ -72,7 +82,5 @@ export function makePetalSpriteTexture(): THREE.Texture {
   ctx.ellipse(0, 0, size * 0.32, size * 0.2, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
+  return asSafeSpriteTexture(canvas);
 }

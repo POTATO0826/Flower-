@@ -21,8 +21,9 @@ export function createOverlay(
   root.className = "overlay";
   if (options.themeClass) root.classList.add(options.themeClass);
 
-  // Browsers block audible autoplay, so music starts on the first real tap or
-  // click anywhere in the scene. The button still toggles it manually.
+  // Music starts by itself where the browser allows it; everywhere else
+  // (iOS especially) the first tap anywhere starts it. The button still
+  // toggles it manually.
   const music = createAmbientMusic();
   const musicBtn = document.createElement("button");
   musicBtn.className = "ui-button music";
@@ -38,15 +39,23 @@ export function createOverlay(
     syncMusicButton(music.toggle());
   };
 
-  const autoStartMusic = (e: PointerEvent) => {
+  const autoStartMusic = (e: Event) => {
     if (musicBtn.contains(e.target as Node)) return;
     if (!music.playing()) syncMusicButton(music.toggle());
     window.removeEventListener("pointerdown", autoStartMusic);
+    window.removeEventListener("keydown", autoStartMusic);
   };
 
   syncMusicButton(false);
   musicBtn.addEventListener("click", toggleMusic);
+
+  // First choice: just start. If the browser refuses (no gesture yet), the
+  // very first tap or keypress anywhere becomes the play button.
+  void music.tryStart().then((ok) => {
+    if (ok) syncMusicButton(true);
+  });
   window.addEventListener("pointerdown", autoStartMusic, { passive: true });
+  window.addEventListener("keydown", autoStartMusic);
 
   root.append(musicBtn);
   container.appendChild(root);
@@ -55,6 +64,7 @@ export function createOverlay(
     root,
     dispose() {
       window.removeEventListener("pointerdown", autoStartMusic);
+      window.removeEventListener("keydown", autoStartMusic);
       musicBtn.removeEventListener("click", toggleMusic);
       music.dispose();
       root.remove();
