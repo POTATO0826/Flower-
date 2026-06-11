@@ -177,10 +177,11 @@ export function createFlowerScene(
       const flower = cfg.extraFlowers!.make();
       const holder = new THREE.Group();
       holder.position.copy(spot.position).addScaledVector(spot.direction, STALK_LENGTH);
-      // Lean outward (partway between "up" and the stalk's direction).
+      // Lean well outward, facing away from the trunk — tilting up would
+      // stack the cluster in front of the hero blossom at the tip.
       holder.quaternion.setFromUnitVectors(
         up,
-        spot.direction.clone().lerp(up, 0.4).normalize(),
+        spot.direction.clone().lerp(up, 0.28).normalize(),
       );
       holder.rotateY(Math.random() * Math.PI * 2);
       holder.scale.setScalar(cfg.extraFlowers!.scales?.[i] ?? 0.75);

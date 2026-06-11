@@ -123,8 +123,10 @@ export function createBranch(options: BranchOptions = {}): BranchResult {
     return { mesh, tip: p2 };
   };
 
-  const twig1 = makeTwig(0.55, new THREE.Vector3(0.32 * s, 0.2 * s, 0.2 * s));
-  const twig2 = makeTwig(0.76, new THREE.Vector3(-0.3 * s, 0.18 * s, -0.16 * s));
+  // Twigs stay well below the tip and reach sideways, never up — nothing is
+  // allowed to stand in front of the hero blossom.
+  const twig1 = makeTwig(0.55, new THREE.Vector3(0.32 * s, 0.12 * s, 0.2 * s));
+  const twig2 = makeTwig(0.66, new THREE.Vector3(-0.3 * s, 0.1 * s, -0.16 * s));
   // A third twig low down fills the bottom half and widens the silhouette.
   const twig3 = makeTwig(0.3, new THREE.Vector3(-0.3 * s, 0.14 * s, 0.26 * s));
   group.add(twig1.mesh, twig2.mesh, twig3.mesh);
@@ -154,27 +156,27 @@ export function createBranch(options: BranchOptions = {}): BranchResult {
   const attachPoints: BranchAttachPoint[] = [
     {
       position: mainCurve.getPoint(0.45).add(new THREE.Vector3(0.02 * s, 0.02, 0.06 * s)),
-      direction: new THREE.Vector3(0.15, 0.35, 0.95).normalize(), // front
+      direction: new THREE.Vector3(0.15, 0.2, 0.95).normalize(), // front
       order: 0,
     },
     {
-      position: mainCurve.getPoint(0.68).add(new THREE.Vector3(-0.05 * s, 0, 0.04 * s)),
-      direction: new THREE.Vector3(-0.85, 0.35, 0.45).normalize(), // left
+      position: mainCurve.getPoint(0.58).add(new THREE.Vector3(-0.05 * s, 0, 0.04 * s)),
+      direction: new THREE.Vector3(-0.85, 0.2, 0.45).normalize(), // left
       order: 1,
     },
     {
       position: twig1.tip.clone(),
-      direction: new THREE.Vector3(0.6, 0.5, 0.35).normalize(), // right
+      direction: new THREE.Vector3(0.6, 0.3, 0.35).normalize(), // right
       order: 2,
     },
     {
       position: twig2.tip.clone(),
-      direction: new THREE.Vector3(-0.45, 0.5, -0.6).normalize(), // back-left
+      direction: new THREE.Vector3(-0.45, 0.3, -0.6).normalize(), // back-left
       order: 3,
     },
     {
       position: twig3.tip.clone(),
-      direction: new THREE.Vector3(-0.5, 0.45, 0.65).normalize(), // front-left, low
+      direction: new THREE.Vector3(-0.5, 0.25, 0.65).normalize(), // front-left, low
       order: 4,
     },
     {
