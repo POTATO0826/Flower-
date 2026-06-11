@@ -260,28 +260,13 @@ export function initSakura(container: HTMLElement): () => void {
       snow.material.opacity = 0.8; // snow falls from the very beginning
       scene.add(snow.points);
 
-      // --- a soft halo of moon-pink light around the blossom ----------------
-      const halo = new THREE.Sprite(
-        new THREE.SpriteMaterial({
-          map: makeSoftCircleTexture(),
-          color: 0xffc4da,
-          transparent: true,
-          opacity: 0.12, // dim — a whisper of glow, not a spotlight
-          depthWrite: false,
-        }),
-      );
-      halo.position.set(0, 0.95, 0); // around the flower head
-      halo.scale.setScalar(3.2);
-      scene.add(halo);
+      // (No halo glow around the blossom — that bright "middle light" was
+      // where Safari's rainbow speckles loved to gather, and the flower's
+      // own gentle emissive glow carries the scene fine without it.)
 
-      // (The unopened buds now live on the branch itself — see createBranch.)
-
-      // Per-frame: keep the snow falling, the halo breathing and the mist
-      // drifting in a slow circle.
+      // Per-frame: keep the snow falling and the mist drifting slowly.
       return (dt, elapsed) => {
         snow.update(dt, elapsed);
-        const breath = 1 + Math.sin(elapsed * 0.7) * 0.06;
-        halo.scale.setScalar(3.2 * breath);
         mists.forEach((mist, i) => {
           const a = (i / 5) * Math.PI * 2 + elapsed * 0.02;
           mist.position.x = Math.cos(a) * (2 + i);
